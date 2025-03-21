@@ -1,0 +1,38 @@
+name: 오키 사이트 유저 어록 수집
+run-name: 오키 사이트 유저(${{ inputs.userId }})의 어록 수집 진행 중 ...
+on:
+  workflow_dispatch:
+    inputs:
+      userId:
+        description: '유저 ID'
+        required: true
+      siteMagic:
+        description: '사이트 마법의 값'
+        required: true
+
+jobs:
+  crawl-user-quotes:
+    name: 유저 어록 크롤링
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Crawl
+        run: |
+          echo "Target User ID: $TARGET_USERID"
+          mkdir -p "data/$TARGET_USERID"
+
+          TS="$(date --utc -Iseconds)"
+          OUTFILE="data/$TARGET_USERID/$TS"
+          ./okky-cuseract.py "$TARGET_USERID" "$SITE_MAGIC" > "$OUTFILE"
+        env:
+          TARGET_USERID: ${{ inputs.userId }}
+          SITE_MAGIC: ${{ inputs.siteMagic }}
+      - name: Commit
+        run: |
+          git config --global user.name 'Dump Automation Bot'
+          git config --global user.email '_@users.noreply.github.com'
+          git add data
+          git commit -sm "Data commit: user id $TARGET_USERID"
+          git push
+        env:
+          TARGET_USERID: ${{ inputs.userId }}
